@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go-finance/internal/models"
 	"net/http"
 	"net/url"
 	"time"
@@ -24,13 +25,7 @@ func NewFinmindClient(baseURL string) *FinmindClient {
 	}
 }
 
-type FinmindResponse struct {
-	Msg    string          `json:"message"`
-	Status int             `json:"status"`
-	Data   json.RawMessage `json:"data"`
-}
-
-func (c *FinmindClient) GetTaiwanStockPrice(ctx context.Context, dataset, dataID, startDate string) (*FinmindResponse, error) {
+func (c *FinmindClient) GetTaiwanStockPrice(ctx context.Context, dataset, dataID, startDate string) (*models.FinmindResponse, error) {
 	u, err := url.Parse(c.BaseURL)
 	if err != nil {
 		return nil, err
@@ -56,7 +51,7 @@ func (c *FinmindClient) GetTaiwanStockPrice(ctx context.Context, dataset, dataID
 		return nil, fmt.Errorf("finmind: status %d", res.StatusCode)
 	}
 
-	var r FinmindResponse
+	var r models.FinmindResponse
 	if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
 		return nil, err
 	}
