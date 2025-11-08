@@ -19,8 +19,8 @@ func NewFinmindHandler(fc *client.FinmindClient) *FinmindHandler {
 }
 
 // RegisterRoutes registers Finmind routes on the provided engine.
-func (h *FinmindHandler) RegisterRoutes(router *gin.Engine) {
-	fg := router.Group("/finmind")
+func (h *FinmindHandler) RegisterRoutes(rg *gin.RouterGroup) {
+	fg := rg.Group("/finmind")
 	fg.GET("/TaiwanStockPrice/:data_id/:start_date", h.GetTaiwanStockPrice)
 }
 

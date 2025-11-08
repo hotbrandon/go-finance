@@ -24,3 +24,19 @@ https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=2330&s
   ]
 }
 ```
+
+## swagger support
+
+### Download Swag for Go by using:
+go install github.com/swaggo/swag/cmd/swag@latest
+
+### Download gin-swagger by using:
+go get -u github.com/swaggo/gin-swagger
+go get -u github.com/swaggo/files
+
+### Import following
+import "github.com/swaggo/gin-swagger" // gin-swagger middleware
+import "github.com/swaggo/files" // swagger embed files
+
+### add comments to endpoints and run in the project root
+swag init -g main.go -o docs

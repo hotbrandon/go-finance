@@ -22,7 +22,7 @@ func (h *BinanceHandler) GetTicker(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"symbol": symbol})
 }
 
-func (h *BinanceHandler) RegisterRoutes(router *gin.Engine) {
-	bg := router.Group("/binance")
+func (h *BinanceHandler) RegisterRoutes(rg *gin.RouterGroup) {
+	bg := rg.Group("/binance")
 	bg.GET("/ticker/:symbol", h.GetTicker)
 }

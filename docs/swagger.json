@@ -1,0 +1,106 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Go Finance API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/finmind/TaiwanStockPrice/{data_id}/{start_date}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get Taiwan stock price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "stock id",
+                        "name": "data_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "start date",
+                        "name": "start_date",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TaiwanStockPriceResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.StockPrice": {
+            "type": "object",
+            "properties": {
+                "Trading_Volume": {
+                    "type": "integer"
+                },
+                "Trading_money": {
+                    "type": "integer"
+                },
+                "Trading_turnover": {
+                    "type": "integer"
+                },
+                "close": {
+                    "type": "number"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "max": {
+                    "type": "number"
+                },
+                "min": {
+                    "type": "number"
+                },
+                "open": {
+                    "type": "number"
+                },
+                "spread": {
+                    "type": "number"
+                },
+                "stock_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TaiwanStockPriceResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.StockPrice"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}
