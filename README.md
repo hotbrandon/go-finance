@@ -40,3 +40,6 @@ import "github.com/swaggo/files" // swagger embed files
 
 ### add comments to endpoints and run in the project root
 swag init -g main.go -o docs
+
+## scheduler
+go get github.com/robfig/cron/v3

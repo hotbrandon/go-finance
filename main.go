@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"go-finance/docs"
 	"go-finance/internal/client"
 	"go-finance/internal/handlers"
+	"go-finance/internal/jobs"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -45,6 +48,16 @@ func main() {
 	// each handler registers its own routes
 	fh.RegisterRoutes(api)
 	bh.RegisterRoutes(api)
+
+	tz := os.Getenv("TZ")
+	if tz == "" {
+		tz = "Asia/Taipei"
+	}
+	loc, _ := time.LoadLocation(tz)
+	sched := jobs.NewScheduler(fc, loc)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go sched.Start(ctx)
 
 	router.Run("0.0.0.0:" + port)
 }
