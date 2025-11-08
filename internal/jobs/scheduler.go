@@ -35,9 +35,14 @@ func (s *Scheduler) Start(ctx context.Context) {
 		// yesterday := time.Now().In(s.loc).AddDate(0, 0, -1).Format("2006-01-02")
 		// _, err := s.fc.GetTaiwanStockPrice(ctx, "TaiwanStockPrice", "2330", yesterday)
 		today := time.Now().In(s.loc).Format("2006-01-02")
-		_, err := s.fc.GetTaiwanStockPrice(ctx, "TaiwanStockPrice", "2330", today)
+		res, err := s.fc.GetTaiwanStockPrice(ctx, "TaiwanStockPrice", "2330", today)
 		if err != nil {
 			log.Printf("nightly job: fetch error: %v", err)
+			return
+		}
+
+		if len(res.Data) == 0 {
+			log.Printf("nightly job: no data for TaiwanStockPrice on %s", today)
 			return
 		}
 		log.Printf("nightly job: fetched TaiwanStockPrice for %s", today)
