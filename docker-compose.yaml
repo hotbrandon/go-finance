@@ -6,6 +6,6 @@ services:
     image: go-finance:latest
     ports:
       - "8080:8080"                # host:container
-    environment:
+    env_file:
       - .env
     restart: unless-stopped

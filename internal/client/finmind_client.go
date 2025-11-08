@@ -30,7 +30,7 @@ func (c *FinmindClient) GetTaiwanStockPrice(ctx context.Context, dataset, dataID
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(u.Host)
+	// u.Host would look like "api.finmindtrade.com"
 	u.Path = "/api/v4/data"
 	q := u.Query()
 	q.Set("dataset", dataset)
