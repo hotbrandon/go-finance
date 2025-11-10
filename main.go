@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"go-finance/docs"
@@ -55,9 +58,40 @@ func main() {
 	}
 	loc, _ := time.LoadLocation(tz)
 	sched := jobs.NewScheduler(fc, loc)
+
+	// create a context that is cancelled on SIGINT/SIGTERM
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go sched.Start(ctx)
 
-	router.Run("0.0.0.0:" + port)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		log.Println("Shutting down server...")
+		cancel()
+	}()
+
+	// create http.Server so we can shut down gracefully
+	srv := &http.Server{
+		Addr:    "0.0.0.0:" + port,
+		Handler: router,
+	}
+
+	// run server in background
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server listen error: %v", err)
+		}
+	}()
+
+	// wait for cancellation (signal)
+	<-ctx.Done()
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("server shutdown error: %v", err)
+	}
+	log.Println("Shutdown complete")
 }
