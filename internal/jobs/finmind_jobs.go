@@ -2,6 +2,9 @@ package jobs
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"go-finance/internal/models"
 	"log"
 	"time"
 )
@@ -14,23 +17,21 @@ func (s *Scheduler) finmindDailyJob(ctx context.Context, stock_id string) func()
 		jobCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 		defer cancel()
 
-		// watcher: print when the job is cancelled or deadline exceeded
-		go func() {
-			<-jobCtx.Done()
-			switch jobCtx.Err() {
-			case context.Canceled:
-				log.Printf("nightly job: cancelled")
-			case context.DeadlineExceeded:
-				log.Printf("nightly job: deadline exceeded")
-			}
-		}()
-
 		// example: fetch for stock 2337 from today (adjust as needed)
 		// yesterday := time.Now().In(s.loc).AddDate(0, 0, -1).Format("2006-01-02")
 		// _, err := s.fc.GetTaiwanStockPrice(jobCtx, "TaiwanStockPrice", "2330", yesterday)
 		today := time.Now().In(s.loc).Format("2006-01-02")
 		res, err := s.fc.GetTaiwanStockPrice(jobCtx, "TaiwanStockPrice", stock_id, today)
 		if err != nil {
+			// distinguish cancellation/timeout from other errors
+			if errors.Is(err, context.Canceled) || jobCtx.Err() == context.Canceled {
+				log.Printf("nightly job: fetch cancelled for %s on %s", stock_id, today)
+				return
+			}
+			if errors.Is(err, context.DeadlineExceeded) || jobCtx.Err() == context.DeadlineExceeded {
+				log.Printf("nightly job: fetch deadline exceeded for %s on %s", stock_id, today)
+				return
+			}
 			log.Printf("nightly job: fetch error: %v", err)
 			return
 		}
@@ -39,6 +40,12 @@ func (s *Scheduler) finmindDailyJob(ctx context.Context, stock_id string) func()
 			log.Printf("nightly job: no data for TaiwanStockPrice on %s", today)
 			return
 		}
-		log.Printf("nightly job: fetched TaiwanStockPrice for %s", today)
+		var prices []models.StockPrice
+		if err := json.Unmarshal(res.Data, &prices); err != nil {
+			log.Printf("nightly job: invalid data format for stock_id %s: %s", stock_id, err.Error())
+			return
+		}
+
+		log.Printf("nightly job: fetched TaiwanStockPrice for %s: %v", prices[0].Date, prices[0].Close)
 	}
 }
