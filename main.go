@@ -58,6 +58,8 @@ func main() {
 	}
 	loc, _ := time.LoadLocation(tz)
 	sched := jobs.NewScheduler(fc, loc)
+	jh := handlers.NewJobsHandler(sched)
+	jh.RegisterRoutes(api)
 
 	// create a context that is cancelled on SIGINT/SIGTERM
 	ctx, cancel := context.WithCancel(context.Background())

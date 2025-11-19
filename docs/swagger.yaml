@@ -1,5 +1,18 @@
 basePath: /api/v1
 definitions:
+  jobs.JobStatus:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      next:
+        type: string
+      prev:
+        type: string
+      spec:
+        type: string
+    type: object
   models.StockPrice:
     properties:
       Trading_Volume:
@@ -66,4 +79,27 @@ paths:
               type: string
             type: object
       summary: Get Taiwan stock price
+      tags:
+      - Finmind
+  /jobs:
+    get:
+      description: Returns scheduled jobs with next/prev run times and metadata.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/jobs.JobStatus'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List scheduled jobs
+      tags:
+      - Jobs
 swagger: "2.0"

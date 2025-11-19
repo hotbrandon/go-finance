@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"go-finance/internal/client"
@@ -10,10 +11,26 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+type JobMeta struct {
+	Name string
+	Spec string
+}
+
 type Scheduler struct {
 	cron *cron.Cron
 	fc   *client.FinmindClient
 	loc  *time.Location
+
+	mu   sync.RWMutex
+	jobs map[cron.EntryID]JobMeta
+}
+
+type JobStatus struct {
+	ID   int       `json:"id"`
+	Name string    `json:"name,omitempty"`
+	Spec string    `json:"spec,omitempty"`
+	Next time.Time `json:"next,omitempty"`
+	Prev time.Time `json:"prev,omitempty"`
 }
 
 func NewScheduler(fc *client.FinmindClient, loc *time.Location) *Scheduler {
@@ -21,45 +38,58 @@ func NewScheduler(fc *client.FinmindClient, loc *time.Location) *Scheduler {
 		cron.WithLocation(loc),
 		cron.WithSeconds(), // enable seconds field
 	)
-	return &Scheduler{cron: c, fc: fc, loc: loc}
+	return &Scheduler{
+		cron: c, fc: fc, loc: loc,
+		jobs: make(map[cron.EntryID]JobMeta),
+	}
+}
+
+// AddJob wraps cron.AddFunc and records metadata
+func (s *Scheduler) AddJob(spec, name string, job func()) (cron.EntryID, error) {
+	id, err := s.cron.AddFunc(spec, job)
+	if err != nil {
+		return 0, err
+	}
+	s.mu.Lock()
+	s.jobs[id] = JobMeta{Name: name, Spec: spec}
+	s.mu.Unlock()
+	return id, nil
+}
+
+// ListJobs returns a snapshot of scheduled jobs with next/prev run times
+func (s *Scheduler) ListJobs() []JobStatus {
+	entries := s.cron.Entries()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	out := make([]JobStatus, 0, len(entries))
+	for _, entry := range entries {
+		meta, exists := s.jobs[entry.ID]
+		js := JobStatus{
+			ID:   int(entry.ID),
+			Next: entry.Next,
+			Prev: entry.Prev,
+		}
+		if exists {
+			js.Name = meta.Name
+			js.Spec = meta.Spec
+		}
+		out = append(out, js)
+	}
+	return out
 }
 
 func (s *Scheduler) Start(ctx context.Context) {
 	// "0 0 21 * * *" => at 21:00:00 every day (seconds, minutes, hours, day, month, dow)
-	_, err := s.cron.AddFunc("0 0 21 * * *", func() {
-		// run the job with a per-job timeout
-		jobCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
-		defer cancel()
-
-		// watcher: print when the job is cancelled or deadline exceeded
-		go func() {
-			<-jobCtx.Done()
-			switch jobCtx.Err() {
-			case context.Canceled:
-				log.Printf("nightly job: cancelled")
-			case context.DeadlineExceeded:
-				log.Printf("nightly job: deadline exceeded")
-			}
-		}()
-
-		// example: fetch for stock 2337 from today (adjust as needed)
-		// yesterday := time.Now().In(s.loc).AddDate(0, 0, -1).Format("2006-01-02")
-		// _, err := s.fc.GetTaiwanStockPrice(jobCtx, "TaiwanStockPrice", "2330", yesterday)
-		today := time.Now().In(s.loc).Format("2006-01-02")
-		res, err := s.fc.GetTaiwanStockPrice(jobCtx, "TaiwanStockPrice", "2330", today)
-		if err != nil {
-			log.Printf("nightly job: fetch error: %v", err)
-			return
-		}
-
-		if len(res.Data) == 0 {
-			log.Printf("nightly job: no data for TaiwanStockPrice on %s", today)
-			return
-		}
-		log.Printf("nightly job: fetched TaiwanStockPrice for %s", today)
-	})
+	_, err := s.AddJob("0 0 21 * * *", "finmind-2337", s.finmindDailyJob(ctx, "2337"))
 	if err != nil {
-		log.Printf("scheduler add func error: %v", err)
+		log.Printf("scheduler add job error: %v", err)
+		return
+	}
+
+	_, err = s.AddJob("0 1 21 * * *", "finmind-2885", s.finmindDailyJob(ctx, "2885"))
+	if err != nil {
+		log.Printf("scheduler add job error: %v", err)
 		return
 	}
 

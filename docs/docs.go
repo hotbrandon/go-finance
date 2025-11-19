@@ -20,6 +20,9 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "Finmind"
+                ],
                 "summary": "Get Taiwan stock price",
                 "parameters": [
                     {
@@ -55,9 +58,61 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/jobs": {
+            "get": {
+                "description": "Returns scheduled jobs with next/prev run times and metadata.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Jobs"
+                ],
+                "summary": "List scheduled jobs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/jobs.JobStatus"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "jobs.JobStatus": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "next": {
+                    "type": "string"
+                },
+                "prev": {
+                    "type": "string"
+                },
+                "spec": {
+                    "type": "string"
+                }
+            }
+        },
         "models.StockPrice": {
             "type": "object",
             "properties": {

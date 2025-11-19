@@ -26,6 +26,7 @@ func (h *FinmindHandler) RegisterRoutes(rg *gin.RouterGroup) {
 
 // GetTaiwanStockPrice godoc
 // @Summary Get Taiwan stock price
+// @Tags Finmind
 // @Produce json
 // @Param data_id path string true "stock id"
 // @Param start_date path string true "start date"
