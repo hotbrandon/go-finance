@@ -57,3 +57,9 @@ CLI: docker compose down --timeout 30
 Compose file: add stop_grace_period: "30s" under the service
 Test locally: docker stop --time=30 <container> simulates the same behavior.
 Summary: expect SIGTERM first, then SIGKILL after the timeout — make sure your app reacts to SIGTERM for graceful shutdown.
+
+## working with existing postgres container
+go get github.com/lib/pq
+
+docker compose up -d --build --no-recreate
+

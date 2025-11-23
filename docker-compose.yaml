@@ -1,11 +1,27 @@
 services:
+  db:
+    image: postgres:17.5-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: lisa
+      POSTGRES_PASSWORD: lisa1234
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     image: go-finance:latest
     ports:
-      - "8080:8080"                # host:container
+      - "8080:8080"
     env_file:
       - .env
     restart: unless-stopped
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+    external: true   # ← this single line is what protects your data

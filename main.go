@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	_ "github.com/lib/pq"
 
 	"go-finance/docs"
 	"go-finance/internal/client"
@@ -31,6 +34,31 @@ func main() {
 	if port == "" {
 		log.Fatal("Environment variable GO_FINANCE_PORT not set!")
 	}
+
+	// connect to Postgres
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("Environment variable DATABASE_URL not set!")
+	}
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("open db: %v", err)
+	}
+
+	// verify DB reachable with short timeout
+	ctxPing, cancelPing := context.WithTimeout(context.Background(), 5*time.Second)
+	if err := db.PingContext(ctxPing); err != nil {
+		cancelPing()
+		db.Close()
+		log.Fatalf("ping db: %v", err)
+	}
+	cancelPing()
+
+	// ensure db is closed on shutdown (deferred; main will block until shutdown)
+	defer func() {
+		_ = db.Close()
+	}()
 
 	// create clients once and reuse
 	fc := client.NewFinmindClient("https://api.finmindtrade.com")
