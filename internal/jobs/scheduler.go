@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go-finance/internal/client"
+	"go-finance/internal/models"
 
 	"github.com/robfig/cron/v3"
 )
@@ -23,14 +24,6 @@ type Scheduler struct {
 
 	mu   sync.RWMutex
 	jobs map[cron.EntryID]JobMeta
-}
-
-type JobStatus struct {
-	ID   int       `json:"id"`
-	Name string    `json:"name,omitempty"`
-	Spec string    `json:"spec,omitempty"`
-	Next time.Time `json:"next,omitempty"`
-	Prev time.Time `json:"prev,omitempty"`
 }
 
 func NewScheduler(fc *client.FinmindClient, loc *time.Location) *Scheduler {
@@ -57,15 +50,15 @@ func (s *Scheduler) AddJob(spec, name string, job func()) (cron.EntryID, error) 
 }
 
 // ListJobs returns a snapshot of scheduled jobs with next/prev run times
-func (s *Scheduler) ListJobs() []JobStatus {
+func (s *Scheduler) ListJobs() []models.JobStatus {
 	entries := s.cron.Entries()
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	out := make([]JobStatus, 0, len(entries))
+	out := make([]models.JobStatus, 0, len(entries))
 	for _, entry := range entries {
 		meta, exists := s.jobs[entry.ID]
-		js := JobStatus{
+		js := models.JobStatus{
 			ID:   int(entry.ID),
 			Next: entry.Next,
 			Prev: entry.Prev,

@@ -1,6 +1,12 @@
 basePath: /api/v1
 definitions:
-  jobs.JobStatus:
+  models.APIResponse:
+    properties:
+      data: {}
+      error:
+        type: string
+    type: object
+  models.JobStatus:
     properties:
       id:
         type: integer
@@ -11,6 +17,15 @@ definitions:
       prev:
         type: string
       spec:
+        type: string
+    type: object
+  models.JobsAPIResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.JobStatus'
+        type: array
+      error:
         type: string
     type: object
   models.StockPrice:
@@ -36,16 +51,14 @@ definitions:
       stock_id:
         type: string
     type: object
-  models.TaiwanStockPriceResponse:
+  models.TaiwanStockPriceAPIResponse:
     properties:
       data:
         items:
           $ref: '#/definitions/models.StockPrice'
         type: array
-      message:
+      error:
         type: string
-      status:
-        type: integer
     type: object
 info:
   contact: {}
@@ -60,7 +73,7 @@ paths:
         name: data_id
         required: true
         type: string
-      - description: start date
+      - description: start date (format YYYY-MM-DD)
         in: path
         name: start_date
         required: true
@@ -71,13 +84,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.TaiwanStockPriceResponse'
+            $ref: '#/definitions/models.TaiwanStockPriceAPIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.APIResponse'
       summary: Get Taiwan stock price
       tags:
       - Finmind
@@ -90,15 +105,11 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/jobs.JobStatus'
-            type: array
+            $ref: '#/definitions/models.JobsAPIResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.APIResponse'
       summary: List scheduled jobs
       tags:
       - Jobs

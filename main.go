@@ -75,6 +75,7 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 	router := gin.New()
+	router.Use(middleware.RequestID())
 	router.Use(middleware.RequestLogger(logger))
 	router.Use(gin.Recovery())
 	docs.SwaggerInfo.BasePath = "/api/v1"

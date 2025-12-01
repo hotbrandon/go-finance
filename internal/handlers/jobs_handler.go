@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"go-finance/internal/jobs"
+	"go-finance/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,10 +27,10 @@ func (h *JobsHandler) RegisterRoutes(rg *gin.RouterGroup) {
 // @Description Returns scheduled jobs with next/prev run times and metadata.
 // @Tags Jobs
 // @Produce json
-// @Success 200 {array} jobs.JobStatus
-// @Failure 500 {object} map[string]string
+// @Success 200 {object} models.JobsAPIResponse
+// @Failure 500 {object} models.APIResponse // Error responses can still use the generic one
 // @Router /jobs [get]
 func (h *JobsHandler) ListJobs(c *gin.Context) {
 	jobs := h.Sched.ListJobs()
-	c.JSON(http.StatusOK, jobs)
+	c.JSON(http.StatusOK, models.NewSuccessResponse(jobs))
 }

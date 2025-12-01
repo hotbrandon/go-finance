@@ -34,7 +34,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "start date",
+                        "description": "start date (format YYYY-MM-DD)",
                         "name": "start_date",
                         "in": "path",
                         "required": true
@@ -44,16 +44,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.TaiwanStockPriceResponse"
+                            "$ref": "#/definitions/models.TaiwanStockPriceAPIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -73,19 +76,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/jobs.JobStatus"
-                            }
+                            "$ref": "#/definitions/models.JobsAPIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -93,7 +90,16 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "jobs.JobStatus": {
+        "models.APIResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.JobStatus": {
             "type": "object",
             "properties": {
                 "id": {
@@ -109,6 +115,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "spec": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.JobsAPIResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.JobStatus"
+                    }
+                },
+                "error": {
                     "type": "string"
                 }
             }
@@ -148,7 +168,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.TaiwanStockPriceResponse": {
+        "models.TaiwanStockPriceAPIResponse": {
             "type": "object",
             "properties": {
                 "data": {
@@ -157,11 +177,8 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.StockPrice"
                     }
                 },
-                "message": {
+                "error": {
                     "type": "string"
-                },
-                "status": {
-                    "type": "integer"
                 }
             }
         }

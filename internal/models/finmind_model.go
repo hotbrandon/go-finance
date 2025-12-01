@@ -24,9 +24,9 @@ type StockPrice struct {
 	TradingTurnover int64   `json:"Trading_turnover"`
 }
 
-// typed response for this specific endpoint (use in docs/handlers)
-type TaiwanStockPriceResponse struct {
-	Msg    string       `json:"message"`
-	Status int          `json:"status"`
-	Data   []StockPrice `json:"data"`
+// TaiwanStockPriceAPIResponse is a specific APIResponse for Swagger documentation
+// that explicitly defines the type of the 'data' field for this endpoint.
+type TaiwanStockPriceAPIResponse struct {
+	Data  []StockPrice `json:"data,omitempty"`
+	Error string       `json:"error,omitempty"`
 }

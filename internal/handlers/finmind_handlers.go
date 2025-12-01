@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"go-finance/internal/client"
 	"go-finance/internal/models"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,32 +31,34 @@ func (h *FinmindHandler) RegisterRoutes(rg *gin.RouterGroup) {
 // @Tags Finmind
 // @Produce json
 // @Param data_id path string true "stock id"
-// @Param start_date path string true "start date"
-// @Success 200 {object} models.TaiwanStockPriceResponse
-// @Failure 500 {object} map[string]string
+// @Param start_date path string true "start date (format YYYY-MM-DD)"
+// @Success 200 {object} models.TaiwanStockPriceAPIResponse
+// @Failure 400 {object} models.APIResponse
+// @Failure 500 {object} models.APIResponse
 // @Router /finmind/TaiwanStockPrice/{data_id}/{start_date} [get]
 func (h *FinmindHandler) GetTaiwanStockPrice(c *gin.Context) {
 	dataID := c.Param("data_id")
 	startDate := c.Param("start_date")
 
+	if _, err := time.Parse("2006-01-02", startDate); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewErrorAPIResponse(errors.New("invalid start_date format, expected YYYY-MM-DD")))
+		return
+	}
+
 	res, err := h.Client.GetTaiwanStockPrice(c.Request.Context(), "TaiwanStockPrice", dataID, startDate)
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
+		// Using the helper function for consistency
+		c.JSON(http.StatusInternalServerError, models.NewErrorAPIResponse(err))
 		return
 	}
 	// decode the raw "data" into the concrete slice
 	var prices []models.StockPrice
 	if err := json.Unmarshal(res.Data, &prices); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid data format: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, models.NewErrorAPIResponse(errors.New("invalid data format from upstream API")))
 		return
 	}
 
 	// return a typed response (good for clients and docs)
-	c.JSON(http.StatusOK, models.TaiwanStockPriceResponse{
-		Msg:    res.Msg,
-		Status: res.Status,
-		Data:   prices,
-	})
+	// Now returning a unified APIResponse with the actual data
+	c.JSON(http.StatusOK, models.NewSuccessResponse(prices))
 }
