@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 	"go-finance/internal/client"
 	"go-finance/internal/handlers"
 	"go-finance/internal/jobs"
+	"go-finance/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -68,7 +70,13 @@ func main() {
 	fh := handlers.NewFinmindHandler(fc)
 	bh := handlers.NewBinanceHandler(bc)
 
-	router := gin.Default()
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+	slog.SetDefault(logger)
+	router := gin.New()
+	router.Use(middleware.RequestLogger(logger))
+	router.Use(gin.Recovery())
 	docs.SwaggerInfo.BasePath = "/api/v1"
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	router.GET("/ping", func(c *gin.Context) { c.JSON(200, gin.H{"message": "ok"}) })
